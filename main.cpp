@@ -54,79 +54,35 @@ public:
 
     void Move()
     {
-        //detectCollision();
         pos_x += vel_x;
         pos_y += vel_y;
         Update();
     };
 
-    int getX1()
+    const int getX1()
     {
         return(pos_x);
     };
 
-    int getX2()
+    const int getX2()
     {
         return(pos_x + radius*2 );
     };
 
-    int getY1()
+    const int getY1()
     {
         return(pos_y);
     };
 
-    int getY2()
+    const int getY2()
     {
         return(pos_y + radius*2);
     };
 
-    sf::Shape getShape()
+    sf::Shape& getShape()
     {
         return ball;
     };
-
-    /*void detectCollision()
-    {
-    	table.Collision(this);
-    };*/
-};
-
-class Player
-{
-private:
-    sf::String ScoreBoard;
-    string name;
-    int score;
-public:
-    Player(string name, int pos_x, int pos_y ) :score(0), name(name), ScoreBoard( "0", sf::Font::GetDefaultFont(), 30)
-    {
-        ScoreBoard.SetPosition(pos_x, pos_y);
-        ScoreBoard.SetColor(sf::Color::Red);
-    };
-
-    void addPoint()
-    {
-        this->score++;
-        ScoreBoard.SetText( this->getScoreAsString() );
-//					cout << this->name << " has " << this->score << " points.\n";
-    };
-
-    string getName()
-    {
-        return(name);
-    };
-
-    string getScoreAsString()
-    {
-        std::ostringstream scoreAsString;
-        scoreAsString << this->score;
-        return scoreAsString.str();
-    };
-
-    sf::String &getScoreBoard()
-    {
-        return( this->ScoreBoard );
-    }
 };
 
 class Paddle
@@ -141,22 +97,22 @@ public:
     Paddle ( int pos_x ) :pos_x(pos_x), pos_y(270),size_x(10), size_y(60), yposStart(0), yposEnd(100), speed(2),paddle(sf::Shape::Rectangle( pos_x, pos_y, pos_x + size_x, pos_y + size_y , sf::Color::White)){};
 
 
-    int getX1()
+    const int getX1()
     {
         return(pos_x);
     };
 
-    int getX2()
+    const int getX2()
     {
         return(pos_x + size_x);
     };
 
-    int getY1()
+    const int getY1()
     {
         return(pos_y);
     };
 
-    int getY2()
+    const int getY2()
     {
         return(pos_y + size_y);
     };
@@ -179,7 +135,7 @@ public:
         };
     };
 
-    virtual void MoveUp()
+    void MoveUp()
     {
         pos_y -= speed;
         paddle.Move(0, -speed);
@@ -191,10 +147,55 @@ public:
         paddle.Move(0, speed);
     };
 
-    sf::Shape getShape()
+    const sf::Shape& getShape()
     {
         return paddle;
     };
+};
+
+class Player
+{
+private:
+    sf::String ScoreBoard;
+    string name;
+    int score;
+    sf::Key::Code  padUpKey, padDownKey;
+    Pong::Paddle pad;
+
+public:
+    Player(string name, int pad_pos_x, int score_pos_x, int score_pos_y, sf::Key::Code  padUpKey, sf::Key::Code padDownKey ) :score(0), pad(pad_pos_x), padUpKey(padUpKey), padDownKey(padDownKey), name(name), ScoreBoard( "0", sf::Font::GetDefaultFont(), 30)
+    {
+        ScoreBoard.SetPosition(score_pos_x, score_pos_y);
+        ScoreBoard.SetColor(sf::Color::Red);
+    };
+
+    void addPoint()
+    {
+        this->score++;
+        ScoreBoard.SetText( this->getScoreAsString() );
+    };
+
+    const string getName()
+    {
+        return(name);
+    };
+
+    const string getScoreAsString()
+    {
+        std::ostringstream scoreAsString;
+        scoreAsString << this->score;
+        return scoreAsString.str();
+    };
+
+    const sf::Shape &getPaddle()
+    {
+        return(this->pad.getShape());
+    }
+
+    const sf::String &getScoreBoard()
+    {
+        return( this->ScoreBoard );
+    }
 };
 
 class Table
@@ -205,7 +206,7 @@ class Table
     public:
         Table (int width, int height) :size_y(height), size_x(width), pos_x(10), pos_y(10), table(sf::Shape::Rectangle( pos_x, pos_y, pos_x + size_x, pos_y + size_y , sf::Color::Black, 5, sf::Color::White)) {};
 
-        sf::Shape getShape()
+        sf::Shape& getShape()
         {
             return(table);
         };
@@ -245,25 +246,21 @@ class Table
 };
 
 int main()
-{
-    sf::RenderWindow App(sf::VideoMode(800, 600), "SFML Shapes");
+{ws
+    sf::RenderWindow App(sf::VideoMode(800, 600), "PONG, OH YEAH!!!!!!!!!!!!!!!!!");
 
     Pong::Table table(780, 580);
     Pong::Paddle pad1(20);
     Pong::Paddle pad2(770);
     Pong::Ball ball;
-    Pong::Player player1("Player 1", 70, 20);
-    Pong::Player player2("Player 2", 720, 20);
+    Pong::Player player1("Player 1", 20, 70, 20, sf::Key::W, sf::Key::S);
+    Pong::Player player2("Player 2", 770, 720, 20, sf::Key::Up, sf::Key::Down);
 
 
     sf::Event Event;
-    sf::Clock Clock;
 
     while (App.IsOpened())
     {
-        float Time = Clock.GetElapsedTime();
-        Clock.Reset();
-
         if (App.GetEvent(Event))
         {
             if ( Event.Type == sf::Event::Closed )
@@ -291,6 +288,8 @@ int main()
 
         App.Clear();
 
+        ball.Move();
+
         table.Collision(ball, player1, player2);
 
         table.Collision(pad1);
@@ -299,14 +298,14 @@ int main()
         pad1.Collision(ball);
         pad2.Collision(ball);
 
-        ball.Move();
-
         App.Draw( table.getShape() );
         App.Draw( ball.getShape() );
         App.Draw( pad1.getShape() );
         App.Draw( pad2.getShape() );
         App.Draw( player1.getScoreBoard() );
+        //sApp.Draw( player1.getPaddle() );
         App.Draw( player2.getScoreBoard() );
+        //App.Draw( player1.getPaddle() );
         App.Display();
 
         sf::Sleep(.005F);
